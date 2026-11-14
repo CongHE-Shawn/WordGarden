@@ -1,0 +1,19 @@
+{
+  "name": "word-garden-android",
+  "version": "1.0.0",
+  "description": "单词花园 Android 打包工程",
+  "private": true,
+  "scripts": {
+    "add:android": "cap add android",
+    "sync": "cap sync android",
+    "build": "cap build android",
+    "open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/android": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}

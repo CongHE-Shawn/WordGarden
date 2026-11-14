@@ -1,0 +1,11 @@
+{
+  "appId": "com.wordgarden.app",
+  "appName": "单词花园",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

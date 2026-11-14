@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单词花园 · 清新治愈背单词</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+</head>
+<body>
+
+<!-- ═══ 顶部导航 ═══ -->
+<header id="topbar">
+  <div class="logo" onclick="App.goHome()">🌿<span>单词花园</span></div>
+  <nav class="main-nav">
+    <button class="nav-btn on" data-view="home">🏠 闯关</button>
+    <button class="nav-btn" data-view="mistakes">📕 错题本</button>
+    <button class="nav-btn" data-view="manage">📚 词库</button>
+    <button class="nav-btn" data-view="stats">📊 统计</button>
+    <button class="nav-btn" data-view="settings">⚙️ 设置</button>
+  </nav>
+  <div class="top-right">
+    <span id="streak-pill" class="pill streak">🔥 0 天</span>
+    <div class="pill progress-pill" title="今日学习进度">
+      <span id="today-pill">🌿 今日 <b>0</b> / 50</span>
+      <div class="pill-track"><div id="today-fill"></div></div>
+    </div>
+    <button id="user-pill" class="user-pill" style="display:none"></button>
+  </div>
+</header>
+
+<!-- ═══ 中部沉浸区 ═══ -->
+<main id="view"></main>
+
+<!-- ═══ 底部 Tab 导航（移动端显示） ═══ -->
+<nav id="tabbar" class="tabbar">
+  <button class="tab-btn on" data-view="home"><span class="tab-ico">🏠</span><span class="tab-label">闯关</span></button>
+  <button class="tab-btn" data-view="mistakes"><span class="tab-ico">📕</span><span class="tab-label">错题本</span></button>
+  <button class="tab-btn" data-view="manage"><span class="tab-ico">📚</span><span class="tab-label">词库</span></button>
+  <button class="tab-btn" data-view="stats"><span class="tab-ico">📊</span><span class="tab-label">统计</span></button>
+  <button class="tab-btn" data-view="settings"><span class="tab-ico">⚙️</span><span class="tab-label">设置</span></button>
+</nav>
+
+<!-- ═══ 底部操作栏（卡片学习时显示） ═══ -->
+<footer id="actionbar" class="hidden">
+  <div class="act-side">
+    <button id="act-fav" class="icon-btn lg" title="收藏（F）">⭐</button>
+    <button id="act-nb" class="icon-btn lg" title="加入生词本（B）">📒</button>
+    <button id="act-prev" class="icon-btn lg" title="上一个（←）">⬅</button>
+  </div>
+  <div class="act-judge">
+    <button id="act-know" class="judge-btn know"><b>认识</b><span>快捷键 1</span></button>
+    <button id="act-vague" class="judge-btn vague"><b>模糊</b><span>快捷键 2</span></button>
+    <button id="act-unknown" class="judge-btn unknown"><b>不认识</b><span>快捷键 3</span></button>
+  </div>
+  <div class="act-side">
+    <button id="act-next" class="icon-btn lg" title="下一个（→）">➡</button>
+  </div>
+</footer>
+
+<!-- ═══ 数据与脚本（本地文件，file:// 可直接运行） ═══ -->
+<script src="js/data/deck_manifest.js"></script>
+<script src="js/data/examples_curated.js"></script>
+<!-- 课本单元划分（按课本课时分课） -->
+<script src="data/units/unit_map.js"></script>
+<script src="data/placement_bank.js"></script>
+<!-- 六册外研版精写题库（每词 6 题） -->
+<script src="data/questions/qishang_part1.js"></script>
+<script src="data/questions/qishang_part2.js"></script>
+<script src="data/questions/qishang_part3.js"></script>
+<script src="data/questions/qishang_part4.js"></script>
+<script src="data/questions/qishang_part5.js"></script>
+<script src="data/questions/qishang_part6.js"></script>
+<script src="data/questions/qixia_part1.js"></script>
+<script src="data/questions/qixia_part2.js"></script>
+<script src="data/questions/qixia_part3.js"></script>
+<script src="data/questions/qixia_part4.js"></script>
+<script src="data/questions/qixia_part5.js"></script>
+<script src="data/questions/qixia_part6.js"></script>
+<script src="data/questions/bashang_part1.js"></script>
+<script src="data/questions/baxia_part1.js"></script>
+<script src="data/questions/jiushang_part1.js"></script>
+<script src="data/questions/jiuxia_part1.js"></script>
+<script src="js/store.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/srs.js"></script>
+<script src="js/tts.js"></script>
+<script src="js/mascot.js"></script>
+<script src="js/game.js"></script>
+<script src="js/data.js"></script>
+<script src="js/bank.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/lesson.js"></script>
+<script src="js/study.js"></script>
+<script src="js/views.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
