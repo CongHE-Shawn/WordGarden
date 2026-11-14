@@ -54,3 +54,7 @@ tools/findings.json
 packaging/release/*.exe
 packaging/release/*.apk
 packaging/release/index.html
+
+# ─── 本地交付目录 / 本地说明（不提交） ───
+teacher-delivery/
+推送说明.md

@@ -1,6 +1,16 @@
-/* tts.js — 浏览器内置 TTS 发音 + WebAudio 音效（零外部依赖） */
+/* tts.js — 发音：优先 Capacitor 原生 TTS（安卓），回退浏览器 speechSynthesis + WebAudio 音效 */
 (function () {
   var voiceCache = null;
+
+  /* Capacitor 原生 TTS（安卓 APK 环境）：window.Capacitor.Plugins.TextToSpeech */
+  function capTTS() {
+    try {
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech) {
+        return window.Capacitor.Plugins.TextToSpeech;
+      }
+    } catch (e) {}
+    return null;
+  }
 
   function pickVoice() {
     if (voiceCache !== null) return voiceCache;
@@ -16,9 +26,26 @@
   if (window.speechSynthesis) speechSynthesis.onvoiceschanged = function () { voiceCache = null; };
 
   var TTS = {
-    available: !!window.speechSynthesis,
+    /* available：安卓用原生 TTS，浏览器用 speechSynthesis */
+    available: function () {
+      return !!(capTTS() || window.speechSynthesis);
+    },
 
     speak: function (text, rate) {
+      var cap = capTTS();
+      if (cap) {
+        /* 安卓：调用系统 TTS 引擎 */
+        try {
+          cap.stop();
+          cap.speak({
+            text: text,
+            lang: 'en-US',
+            rate: rate || (Store.state ? Store.state.settings.ttsRate : 1),
+            pitch: 1.0
+          }).catch(function () {});
+        } catch (e) {}
+        return;
+      }
       if (!window.speechSynthesis) return;
       speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
