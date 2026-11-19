@@ -118,7 +118,7 @@
           });
         }
         if (units.length) {
-          return { deck: deck, words: words, units: units, byUnit: true };
+          return { deck: deck, words: words, units: units, groups: Bank._groupUnits(units), byUnit: true };
         }
       }
 
@@ -129,6 +129,31 @@
         units2.push({ idx: units2.length, id: 'u' + (units2.length + 1), title: '第 ' + (units2.length + 1) + ' 单元', en: '', words: slice2 });
       }
       return { deck: deck, words: words, units: units2, byUnit: false };
+    },
+
+    /* 把课时列表按「单元」分组：册 → Unit → 课时
+     * 同一 title+en 的连续课时归为一组（e.g. Unit 1 A new start 的 4 个课时） */
+    _groupUnits: function (units) {
+      var groups = [], map = {};
+      units.forEach(function (u) {
+        var key = (u.title || '') + '\u0001' + (u.en || '');
+        if (!map[key]) {
+          map[key] = { id: 'g' + groups.length, title: u.title || '', en: u.en || '', lessons: [] };
+          groups.push(map[key]);
+        }
+        map[key].lessons.push(u);
+      });
+      groups.forEach(function (g) {
+        g.words = 0;
+        g.lessons.forEach(function (l) { g.words += l.words.length; });
+      });
+      return groups;
+    },
+
+    /* 单元显示名：Unit 1 A new start */
+    groupName: function (g) {
+      if (!g) return '';
+      return g.en ? (g.title + ' ' + g.en) : g.title;
     },
 
     /* 单元显示名：优先课本原名（含课时名） */

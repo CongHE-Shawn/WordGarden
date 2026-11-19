@@ -26,6 +26,7 @@
     /* ================= 首页（多邻国式闯关地图） ================= */
     renderHome: function () {
       this.current = 'home';
+      this._openGroup = null;
       var deck = Store.state.settings.deck;
       var meta = Bank.manifest()[deck] || { name: deck };
       var li = Store.levelInfo();
@@ -131,6 +132,10 @@
       Lesson.render();
     },
 
+    /* 当前打开的单元（null = 显示单元列表；否则显示该单元的课时）
+     * 结构：册 → 单元 → 课时，任意课时可直接选，不再自动解锁 */
+    _openGroup: null,
+
     renderPath: function () {
       var deck = Store.state.settings.deck;
       if (this.current !== 'home') return;
@@ -138,62 +143,94 @@
       if (!box) return;
       var bank = Bank.decks[deck];
       if (!bank || !bank.units.length) { box.innerHTML = '<div class="loading">该词库精写题库尚未就绪</div>'; return; }
-      var units = bank.units;
       var st = Store.unitState(deck);
-      var showCount = Math.min(units.length, st.unlocked + 1, 24);
-      var nextUnit = null;
-      var html = '';
-      for (var i = 0; i < showCount; i++) {
-        var u = units[i];
-        var locked = i >= st.unlocked;
-        var done = (st.done[i] || 0);
-        var state = locked ? 'locked' : (done ? 'done' : 'open');
-        if (!locked && !done && nextUnit === null) nextUnit = i;
-        var crowns = Math.min(3, done);
-        var first = u.words[0];
-        // 课时名：课本原名（如 Unit 3 Family ties）+ 课时（如 课时1 Starting out & Reading）
-        var unitTitle = u.title || ('第 ' + (i + 1) + ' 单元');
-        var unitEn = u.en || '';
-        var lessonName = u.lesson || '';
-        // 节点数字：用课时序号（lessonIdx），无则用序号
-        var nodeText = u.lessonIdx ? String(u.lessonIdx) : (i + 1);
-        html +=
-          '<div class="unit-row o' + (i % 5) + '">' +
-            '<button class="unit-node ' + state + (state === 'open' ? ' pulse' : '') + '" data-i="' + i + '">' +
-              (locked ? '<span class="u-lock">🔒</span>' : '<span class="u-num">' + esc(String(nodeText)) + '</span>') +
-              (crowns ? '<span class="u-crown">' + '👑'.repeat(crowns) + '</span>' : '') +
-            '</button>' +
-            '<div class="u-label">' +
-              '<b class="u-unit">' + esc(unitTitle) + '</b>' +
-              (lessonName ? '<i class="u-unit-en">' + esc(lessonName) + '</i>' : (unitEn ? '<i class="u-unit-en">' + esc(unitEn) + '</i>' : '')) +
-              '<span class="u-words">' + u.words.length + ' 词 · ' + (first ? esc(first.gloss.split('；')[0]) : '') + ' …</span>' +
-            '</div>' +
-          '</div>';
+      var groups = bank.groups || Bank._groupUnits(bank.units);
+      var self = this;
+
+      /* ---------- 第二级：某个单元下的课时列表 ---------- */
+      var open = null;
+      if (this._openGroup != null) {
+        open = groups.filter(function (g) { return g.id === self._openGroup; })[0] || null;
       }
-      if (units.length > showCount) html += '<div class="unit-more">… 共 ' + units.length + ' 个课时</div>';
-      box.innerHTML = html;
-      box.querySelectorAll('.unit-node').forEach(function (b) {
-        b.onclick = function () {
-          var i = +b.dataset.i;
-          if (i >= st.unlocked) {
-            b.classList.add('shake');
-            setTimeout(function () { b.classList.remove('shake'); }, 500);
-            App.toast('完成前面的单元才能解锁哦 🌱');
-            return;
-          }
-          Lesson.start(deck, i);
-        };
+      if (open) {
+        var html = '<button class="grp-back" id="grp-back">← 返回单元列表</button>' +
+          '<div class="grp-detail-head">' +
+            '<b>' + esc(open.title) + '</b>' +
+            (open.en ? ' <i>' + esc(open.en) + '</i>' : '') +
+            '<span class="grp-detail-meta">' + open.lessons.length + ' 课时 · ' + open.words + ' 词</span>' +
+          '</div>' +
+          '<div class="lesson-list">';
+        open.lessons.forEach(function (u) {
+          var doneN = st.done[u.idx] || 0;
+          var crowns = Math.min(3, doneN);
+          html +=
+            '<button class="lesson-item' + (doneN ? ' done' : '') + '" data-i="' + u.idx + '">' +
+              '<span class="li-idx">' + esc(String(u.lessonIdx || (open.lessons.indexOf(u) + 1))) + '</span>' +
+              '<span class="li-main">' +
+                '<b>' + esc(u.lesson || ('第 ' + (open.lessons.indexOf(u) + 1) + ' 课')) + '</b>' +
+                '<span class="li-sub">' + u.words.length + ' 词' + (u.words[0] ? ' · ' + esc(u.words[0].word) + ' …' : '') + '</span>' +
+              '</span>' +
+              '<span class="li-state">' + (crowns ? '👑'.repeat(crowns) : '▶') + '</span>' +
+            '</button>';
+        });
+        html += '</div>';
+        box.innerHTML = html;
+        $('grp-back').onclick = function () { Views._openGroup = null; Views.renderPath(); };
+        box.querySelectorAll('.lesson-item').forEach(function (b) {
+          b.onclick = function () { Lesson.start(deck, +b.dataset.i); };
+        });
+        this._renderPathFoot(deck, bank, st, open);
+        return;
+      }
+
+      /* ---------- 第一级：单元卡片列表 ---------- */
+      var totalLessons = bank.units.length;
+      var doneLessons = 0;
+      bank.units.forEach(function (u) { if ((st.done[u.idx] || 0) > 0) doneLessons++; });
+      var html2 = '<div class="grp-summary">共 ' + groups.length + ' 个单元 · ' + totalLessons +
+        ' 课时 · 已学 ' + doneLessons + ' 课时</div><div class="grp-grid">';
+      groups.forEach(function (g) {
+        var dn = 0;
+        g.lessons.forEach(function (l) { if ((st.done[l.idx] || 0) > 0) dn++; });
+        var pct = g.lessons.length ? Math.round(dn / g.lessons.length * 100) : 0;
+        html2 +=
+          '<button class="grp-card' + (dn === g.lessons.length && dn > 0 ? ' complete' : '') + '" data-g="' + esc(g.id) + '">' +
+            '<div class="gc-top">' +
+              '<b class="gc-title">' + esc(g.title) + '</b>' +
+              (g.en ? '<i class="gc-en">' + esc(g.en) + '</i>' : '') +
+            '</div>' +
+            '<div class="gc-meta">' + g.lessons.length + ' 课时 · ' + g.words + ' 词</div>' +
+            '<div class="gc-bar"><div class="gc-fill" style="width:' + pct + '%"></div></div>' +
+            '<div class="gc-prog">' + dn + '/' + g.lessons.length + ' 课时完成</div>' +
+          '</button>';
       });
+      html2 += '</div>';
+      box.innerHTML = html2;
+      box.querySelectorAll('.grp-card').forEach(function (b) {
+        b.onclick = function () { Views._openGroup = b.dataset.g; Views.renderPath(); };
+      });
+      this._renderPathFoot(deck, bank, st, null);
+    },
+
+    /* 底部「继续学习」：跳到全册第一个未完成的课时 */
+    _renderPathFoot: function (deck, bank, st, open) {
       var foot = $('path-foot');
-      if (foot) {
-        var nextName = nextUnit !== null ? (units[nextUnit].title || ('第 ' + (nextUnit + 1) + ' 单元')) : '';
-        foot.innerHTML = nextUnit !== null
-          ? '<button class="btn primary lg" id="btn-continue">▶ 继续 ' + esc(nextName) + '</button>'
-          : '<button class="btn primary lg" id="btn-continue">🎓 本词库全部通关！换一个词库</button>';
-        $('btn-continue').onclick = function () {
-          if (nextUnit !== null) Lesson.start(deck, nextUnit);
-          else Views.deckPickerDialog();
-        };
+      if (!foot) return;
+      var pool = open ? open.lessons : bank.units;
+      var next = null;
+      for (var i = 0; i < pool.length; i++) {
+        if (!(st.done[pool[i].idx] || 0)) { next = pool[i]; break; }
+      }
+      if (next) {
+        var btnLabel = next.lesson || ('第 ' + (next.idx + 1) + ' 课');
+        /* 课时名较长时只取「课时N」前缀 */
+        var m = String(btnLabel).match(/^课时\s*\d+/);
+        if (m) btnLabel = m[0];
+        foot.innerHTML = '<button class="btn primary lg" id="btn-continue">▶ 继续 ' + esc(btnLabel) + '</button>';
+        $('btn-continue').onclick = function () { Lesson.start(deck, next.idx); };
+      } else {
+        foot.innerHTML = '<button class="btn ghost lg" id="btn-continue">🎓 本' + (open ? '单元' : '册') + '已全部完成，可自由复练</button>';
+        $('btn-continue').onclick = function () { Views.renderPath(); };
       }
     },
 
@@ -398,6 +435,7 @@
         b.onclick = function () {
           Store.state.settings.deck = b.dataset.deck;
           Store.save();
+          Views._openGroup = null;
           $('modal-mask').remove();
           Views.renderHome();
         };
